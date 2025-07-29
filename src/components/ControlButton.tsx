@@ -15,20 +15,38 @@ export default function ControlButton({ control }: ControlProps) {
   const [isActive, setIsActive] = useState(false)
   const [eventId, setEventId] = useState<number | null>(null)
 
-  const handleClick = () => {
-    // Ако бутонът вече е активен, не правим нищо
+  const handleClick = async () => {
     if (isActive) return
 
     const newEventId = Math.floor(100000 + Math.random() * 900000)
     
-    // Активираме бутона
     setIsActive(true)
     setEventId(newEventId)
 
-    // TODO: Тук ще се изпраща Webhook/API повикването в бъдеще
-    console.log(`Webhook/API Call: User clicked control "${control.name}" (ID: ${control.id}). Event ID: ${newEventId}`)
+    try {
+      // ИЗПРАЩАМЕ ИСТИНСКА API ЗАЯВКА
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          control_id: control.id,
+          event_id: newEventId,
+        }),
+      })
 
-    // Задаваме таймер за деактивиране след 5 секунди
+      if (!response.ok) {
+        // Ако заявката се провали, показваме грешка в конзолата
+        const errorData = await response.json()
+        console.error('Failed to record event:', errorData)
+      }
+
+    } catch (error) {
+      console.error('Network error:', error)
+    }
+
+    // Таймерът за връщане на бутона в нормално състояние остава
     setTimeout(() => {
       setIsActive(false)
       setEventId(null)
