@@ -16,21 +16,83 @@ export async function PATCH(
     { cookies: { get: (name: string) => cookieStore.get(name)?.value } }
   )
 
-  // 1. Проверка дали потребителят е вписан
   const { data: { user: currentUser } } = await supabase.auth.getUser()
   if (!currentUser) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // 2. Взимаме данните за актуализация
-  const { role, is_active } = await request.json()
+  // === ПРОВЕРКА НА ПРАВАТА НА АДМИНИСТРАТОРА ===
+  const { data: currentAdminProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', currentUser.id)
+    .single()
+  
+  const currentAdminRole = currentAdminProfile?.role
+
+  // Само ADMIN и POWER_ADMIN могат да продължат
+  if (currentAdminRole !== 'ADMIN' && currentAdminRole !== 'POWER_ADMIN') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  // === ВЗИМАНЕ НА ДАННИТЕ ЗА АКТУАЛИЗАЦИЯ ===
+  const { role: newRole, is_active: newStatus } = await request.json()
   const dataToUpdate: { role?: string; is_active?: boolean } = {}
   
-  if (role) dataToUpdate.role = role
-  if (typeof is_active === 'boolean') dataToUpdate.is_active = is_active
+  if (newRole) dataToUpdate.role = newRole
+  if (typeof newStatus === 'boolean') dataToUpdate.is_active = newStatus
+
+  // === ВЗИМАНЕ НА ПРОФИЛА, КОЙТО ЩЕ БЪДЕ ПРОМЕНЯН ===
+  const { data: targetUserProfile, error: targetUserError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', targetUserId)
+    .single()
+
+  if (targetUserError) {
+    return NextResponse.json({ error: 'User not found' }, { status: 404 })
+  }
   
-  // 3. Директно опитваме да актуализираме.
-  // RLS в базата данни ще позволи това САМО ако потребителят е ADMIN/POWER_ADMIN.
+  // ===============================================
+  // ===        БИЗНЕС ЛОГИКА И ЗАЩИТА           ===
+  // ===============================================
+  
+  // ПРОВЕРКА 1: Проверяваме дали това е последният POWER_ADMIN
+  if (targetUserProfile.role === 'POWER_ADMIN') {
+    // Проверката се прави, само ако се опитваме да променим ролята ИЛИ да деактивираме
+    if (newRole !== 'POWER_ADMIN' || (typeof newStatus === 'boolean' && !newStatus)) {
+      const { count } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true }) // head:true е по-бързо, взима само броя
+        .eq('role', 'POWER_ADMIN')
+      
+      if (count === 1) {
+        return NextResponse.json({ error: "Cannot remove or deactivate the last Power Admin." }, { status: 403 });
+      }
+    }
+  }
+
+  // ПРОВЕРКА 2: Само POWER_ADMIN може да променя други POWER_ADMIN-и (но не и да ги деактивира)
+  if (targetUserProfile.role === 'POWER_ADMIN') {
+    if (currentAdminRole !== 'POWER_ADMIN') {
+      return NextResponse.json({ error: "Only Power Admins can modify other Power Admins." }, { status: 403 });
+    }
+    if (typeof newStatus === 'boolean' && !newStatus) {
+      return NextResponse.json({ error: "Power Admins cannot be deactivated." }, { status: 403 });
+    }
+  }
+
+  // ПРОВЕРКА 3: Само POWER_ADMIN може да дава/взима POWER_ADMIN роля
+  if (newRole === 'POWER_ADMIN' && currentAdminRole !== 'POWER_ADMIN') {
+    return NextResponse.json({ error: "Only Power Admins can assign Power Admin role." }, { status: 403 });
+  }
+
+  // ПРОВЕРКА 4: Само POWER_ADMIN може да активира/деактивира ADMIN
+  if (targetUserProfile.role === 'ADMIN' && typeof newStatus === 'boolean' && currentAdminRole !== 'POWER_ADMIN') {
+    return NextResponse.json({ error: "Only Power Admins can change the status of an Admin." }, { status: 403 });
+  }
+
+  // === АКТУАЛИЗАЦИЯ В БАЗАТА ДАННИ ===
   const { error } = await supabase
     .from('profiles')
     .update(dataToUpdate)
@@ -38,8 +100,7 @@ export async function PATCH(
 
   if (error) {
     console.error('Update error:', error)
-    // Грешката от RLS (ако има такава) ще се покаже тук
-    return NextResponse.json({ error: error.message || 'Failed to update user profile' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to update user profile' }, { status: 500 })
   }
 
   return NextResponse.json({ success: true, id: targetUserId }, { status: 200 })

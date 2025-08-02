@@ -9,6 +9,8 @@ import { Loader2 } from 'lucide-react'
 import { useLanguage } from '@/context/LanguageContext' // НОВО
 import LanguageSwitcher from '@/components/LanguageSwitcher' // НОВО
 import toast from 'react-hot-toast'
+import { useSearchParams } from 'next/navigation' // НОВ import
+import { useEffect } from 'react' // НОВ import
 
 export default function LoginPage() {
   const { t } = useLanguage() // НОВО
@@ -17,28 +19,61 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams() // НОВ hook
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
+  // НОВАТА, КОРИГИРАНА ФУНКЦИЯ
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    
-    if (error) {
+
+    // Стъпка 1: Опитваме да се впишем
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    })
+
+    if (signInError) {
       setError('Грешен и-мейл или парола.')
       setLoading(false)
-    } else {
-      // НОВО: Показваме известие
-      toast.success('Успешно вписване! Пренасочваме...')
-      router.push('/dashboard')
+      return
     }
+
+    // Стъпка 2: АКО ВПИСВАНЕТО Е УСПЕШНО, ПРОВЕРЯВАМЕ ПРОФИЛА
+    if (signInData.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_active')
+        .eq('id', signInData.user.id)
+        .single()
+      
+      // АКО ПРОФИЛЪТ Е ДЕАКТИВИРАН
+      if (profile && !profile.is_active) {
+        setError("Вашият акаунт е деактивиран.")
+        // ИЗЛИЗАМЕ ГО ВЕДНАГА, за да изчистим сесията
+        await supabase.auth.signOut() 
+        setLoading(false)
+        return
+      }
+    }
+
+    // Стъпка 3: Ако всичко е наред, показваме съобщение и пренасочваме
+    toast.success('Успешно вписване! Пренасочваме...')
+    router.push('/dashboard')
   }
+
+  // НОВО: Проверяваме за съобщение за грешка при зареждане на страницата
+  useEffect(() => {
+    const errorParam = searchParams.get('error')
+    if (errorParam === 'account_deactivated') {
+      setError("Вашият акаунт е деактивиран.")
+    }
+  }, [searchParams])
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 px-4">
