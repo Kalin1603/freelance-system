@@ -30,9 +30,9 @@ export default async function AdminLayout({
     .single()
 
   // Двойна защита: ако потребителят не е ADMIN, го връщаме към главното табло
-  if (profile?.role !== 'ADMIN') {
-    redirect('/dashboard')
-  }
+  if (profile?.role !== 'ADMIN' && profile?.role !== 'POWER_ADMIN') {
+  redirect('/dashboard')
+}
 
   return (
     <div className="flex h-screen bg-slate-100 dark:bg-slate-900">
