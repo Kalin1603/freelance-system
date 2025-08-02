@@ -4,14 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import UsersTable from '@/components/UsersTable'
-
-export type Profile = {
-  id: string
-  created_at: string
-  username: string | null
-  role: string | null
-  is_active: boolean
-}
+import type { Profile } from '@/types'
 
 // ПРОМЯНАТА Е ТУК
 async function getProfiles(supabase: SupabaseClient) {

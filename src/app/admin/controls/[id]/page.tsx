@@ -20,7 +20,7 @@ export default async function EditControlPage({ params }: EditControlPageProps) 
   )
 
   // Взимаме данните само за тази контрола
-  const { data: control, error } = await supabase
+  const { data: control } = await supabase
     .from('controls')
     .select('*')
     .eq('id', id)

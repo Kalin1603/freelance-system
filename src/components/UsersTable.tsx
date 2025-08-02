@@ -4,7 +4,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-import type { Profile } from '@/app/admin/users/page'
+import type { Profile } from '@/types'
 import { deleteCookie } from 'cookies-next'
 
 type UsersTableProps = {
