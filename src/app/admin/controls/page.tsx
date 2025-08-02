@@ -105,7 +105,7 @@ export default async function AdminControlsPage() {
                       href={`/admin/controls/${control.id}`}
                       className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
                     >
-                      Променѝ
+                      Промени
                     </Link>
                   </td>
                 </tr>

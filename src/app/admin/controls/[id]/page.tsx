@@ -1,102 +1,150 @@
 // Файл: src/app/admin/controls/[id]/page.tsx
+'use client'
 
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { notFound } from 'next/navigation'
+import { useState, useEffect, FormEvent } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
+import { useRouter } from 'next/navigation'
+import { Loader2 } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { useParams } from 'next/navigation'
 
-type EditControlPageProps = {
-  params: {
-    id: string // id-то на контролата от URL-а
-  }
-}
+// Дефинираме типовете данни, които ще използваме в страницата
+type Control = { id: number; name_bg: string; name_en: string; section_id: number }
+type Section = { id: number; name_bg: string }
+type Profile = { id: string; username: string | null }
 
-export default async function EditControlPage({ params }: EditControlPageProps) {
-  const { id } = params
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
+export default function EditControlPage() {
+  const params = useParams()
+  const id = params.id as string
+  const router = useRouter()
+  const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { get: (name: string) => cookieStore.get(name)?.value } }
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  // Взимаме данните само за тази контрола
-  const { data: control } = await supabase
-    .from('controls')
-    .select('*')
-    .eq('id', id)
-    .single()
+  // Създаваме състояния (states) за всички данни, които ще управляваме
+  const [control, setControl] = useState<Control | null>(null)
+  const [sections, setSections] = useState<Section[]>([])
+  const [allUsers, setAllUsers] = useState<Profile[]>([])
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Взимаме всички възможни секции, за да направим падащо меню
-  const { data: sections } = await supabase
-    .from('sections')
-    .select('id, name_bg')
-    .order('name_bg')
+  // useEffect се изпълнява веднъж, когато страницата се зареди,
+  // за да изтеглим всичката необходима информация от базата данни.
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true)
+      // Изпълняваме всички заявки паралелно за по-бързо зареждане
+      const [controlRes, sectionsRes, usersRes, permissionsRes] = await Promise.all([
+        supabase.from('controls').select('*').eq('id', id).single(),
+        supabase.from('sections').select('id, name_bg').order('name_bg'),
+        supabase.from('profiles').select('id, username').order('username'),
+        supabase.from('user_controls').select('user_id').eq('control_id', id)
+      ])
+      
+      setControl(controlRes.data)
+      setSections(sectionsRes.data || [])
+      setAllUsers(usersRes.data || [])
+      setSelectedUserIds(permissionsRes.data?.map(p => p.user_id) || [])
+      setLoading(false)
+    }
+    if (id) { // Добавяме проверка, за да сме сигурни, че id съществува
+        fetchData()
+    }
+  }, [id, supabase])
 
-  if (!control) {
-    notFound()
+  // Тази функция управлява добавянето/премахването на потребители от списъка с избрани
+  const handleUserSelection = (userId: string) => {
+    setSelectedUserIds(prev =>
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    )
   }
+
+  // Тази функция се изпълнява, когато се натисне бутона "Запази Промените"
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    
+    const formData = new FormData(e.target as HTMLFormElement)
+    const updateData = {
+      name_bg: formData.get('name_bg'),
+      name_en: formData.get('name_en'),
+      section_id: formData.get('section_id'),
+      user_ids: selectedUserIds,
+    }
+
+    const response = await fetch(`/api/controls/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updateData),
+    })
+
+    if (response.ok) {
+      toast.success('Контролата е обновена успешно!')
+      router.push('/admin/controls')
+    } else {
+      toast.error('Грешка при обновяване.')
+    }
+    setLoading(false)
+  }
+
+  if (loading) return <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin" /></div>
+  if (!control) return <div>Контролата не е намерена.</div>
 
   return (
     <div>
       <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-6">
-        Редакция на Контрола: <span className="text-indigo-400">{control.name_bg}</span>
+        Редакция на контрола: <span className="text-indigo-400">{control.name_bg}</span>
       </h1>
-
-      <div className="bg-white dark:bg-slate-800/50 rounded-lg shadow p-6 max-w-2xl">
-        <form className="space-y-6">
-          {/* Поле за име (BG) */}
-          <div>
-            <label htmlFor="name_bg" className="block text-sm font-medium">Име (BG)</label>
-            <input 
-              id="name_bg"
-              type="text"
-              name="name_bg"
-              defaultValue={control.name_bg}
-              className="mt-1 block w-full rounded-md dark:bg-slate-800 border-gray-300 dark:border-slate-600 shadow-sm"
-            />
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Секция за Основна информация */}
+        <div className="bg-white dark:bg-slate-800/50 rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Основна информация</h2>
+          <div className="space-y-4 max-w-xl">
+            <div>
+              <label htmlFor="name_bg" className="block text-sm font-medium">Име (BG)</label>
+              <input id="name_bg" type="text" name="name_bg" defaultValue={control.name_bg} required className="mt-1 block w-full rounded-md dark:bg-slate-800 border-gray-300 dark:border-slate-600 shadow-sm" />
+            </div>
+            <div>
+              <label htmlFor="name_en" className="block text-sm font-medium">Име (EN)</label>
+              <input id="name_en" type="text" name="name_en" defaultValue={control.name_en || ''} required className="mt-1 block w-full rounded-md dark:bg-slate-800 border-gray-300 dark:border-slate-600 shadow-sm" />
+            </div>
+            <div>
+              <label htmlFor="section_id" className="block text-sm font-medium">Секция</label>
+              <select id="section_id" name="section_id" defaultValue={control.section_id} className="mt-1 block w-full rounded-md dark:bg-slate-800 border-gray-300 dark:border-slate-600 shadow-sm">
+                {sections.map(section => <option key={section.id} value={section.id}>{section.name_bg}</option>)}
+              </select>
+            </div>
           </div>
+        </div>
 
-          {/* Поле за име (EN) */}
-          <div>
-            <label htmlFor="name_en" className="block text-sm font-medium">Име (EN)</label>
-            <input 
-              id="name_en"
-              type="text"
-              name="name_en"
-              defaultValue={control.name_en}
-              className="mt-1 block w-full rounded-md dark:bg-slate-800 border-gray-300 dark:border-slate-600 shadow-sm"
-            />
+        {/* Секция за Управление на достъп */}
+        <div className="bg-white dark:bg-slate-800/50 rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Управление на достъп</h2>
+          <p className="text-sm text-slate-500 mb-4">Изберете кои потребители да имат достъп до тази контрола.</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {allUsers.map(user => (
+              <div key={user.id} className="flex items-center space-x-2 p-2 rounded-md bg-slate-100 dark:bg-slate-700">
+                <input
+                  type="checkbox"
+                  id={`user-${user.id}`}
+                  checked={selectedUserIds.includes(user.id)}
+                  onChange={() => handleUserSelection(user.id)}
+                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <label htmlFor={`user-${user.id}`} className="font-medium text-sm">{user.username}</label>
+              </div>
+            ))}
           </div>
+        </div>
 
-          {/* Поле за избор на Секция */}
-          <div>
-            <label htmlFor="section_id" className="block text-sm font-medium">Секция</label>
-            <select 
-              id="section_id"
-              name="section_id"
-              defaultValue={control.section_id}
-              className="mt-1 block w-full rounded-md dark:bg-slate-800 border-gray-300 dark:border-slate-600 shadow-sm"
-            >
-              {sections?.map(section => (
-                <option key={section.id} value={section.id}>
-                  {section.name_bg}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* TODO: Добави списък с потребители, които имат достъп */}
-
-          <div className="pt-4">
-            <button 
-              type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700"
-            >
-              Запази Промените
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="pt-4 flex justify-end">
+          <button type="submit" disabled={loading} className="px-6 py-3 flex items-center bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 disabled:bg-indigo-400">
+            {loading && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
+            Запази всички промени
+          </button>
+        </div>
+      </form>
     </div>
   )
 }

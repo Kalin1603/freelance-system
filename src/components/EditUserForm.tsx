@@ -59,13 +59,13 @@ export default function EditUserForm({ profile }: EditUserFormProps) {
       <form onSubmit={handleSubmit} className="py-6 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
            <div className="md:col-span-1">
-            <h3 className="font-semibold text-lg">Статус на Акаунта</h3>
+            <h3 className="font-semibold text-lg">Статус на акаунта</h3>
             <p className="text-sm text-slate-500">Деактивираните акаунти не могат да се вписват.</p>
           </div>
           <div className="md:col-span-2">
             <div className={`p-4 rounded-lg flex items-center justify-between ${isActive ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
               <p className={`font-medium ${isActive ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
-                {isActive ? 'Този акаунт е Активен' : 'Този акаунт е Деактивиран'}
+                {isActive ? 'Този акаунт е активен' : 'Този акаунт е деактивиран'}
               </p>
               <button
                 type="button"
@@ -88,7 +88,7 @@ export default function EditUserForm({ profile }: EditUserFormProps) {
           className="px-6 py-3 flex items-center bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-indigo-400 disabled:cursor-not-allowed transition-all"
         >
           {loading && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
-          <span>Запази Всички Промени</span>
+          <span>Запази всички промени</span>
         </button>
       </div>
     </div>
