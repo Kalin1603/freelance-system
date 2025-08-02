@@ -1,74 +1,49 @@
 // Файл: src/app/admin/users/page.tsx
 
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import Link from "next/link";
+import { createServerClient } from '@supabase/ssr'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
+import UsersTable from '@/components/UsersTable'
+
+export type Profile = {
+  id: string
+  created_at: string
+  username: string | null
+  role: string | null
+  is_active: boolean
+}
+
+// ПРОМЯНАТА Е ТУК
+async function getProfiles(supabase: SupabaseClient) {
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error("Грешка при извличане на потребители:", error)
+    return []
+  }
+  return profiles
+}
 
 export default async function AdminUsersPage() {
-  const cookieStore = await cookies();
+  const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     { cookies: { get: (name: string) => cookieStore.get(name)?.value } }
-  );
+  )
 
-  // Взимаме всички профили от нашата таблица
-  const { data: profiles, error } = await supabase.from("profiles").select("*"); // Взимаме всички колони
-
-  if (error) {
-    console.error("Грешка при извличане на потребители:", error);
-  }
+  const profiles: Profile[] = await getProfiles(supabase)
+  const toastMessage = cookieStore.get('toastMessage')?.value
 
   return (
     <div>
       <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-6">
-        Управление на потребители
+        Управление на Потребители
       </h1>
-
-      <div className="bg-white dark:bg-slate-800/50 rounded-lg shadow">
-        <table className="w-full text-left">
-          <thead className="border-b border-slate-200 dark:border-slate-700">
-            <tr>
-              <th className="p-4">Потребителско име</th>
-              <th className="p-4">Роля</th>
-              <th className="p-4">ID</th>
-              <th className="p-4">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {profiles?.map((profile) => (
-              <tr
-                key={profile.id}
-                className="border-b border-slate-200 dark:border-slate-700 last:border-0"
-              >
-                <td className="p-4 font-medium">{profile.username}</td>
-                <td className="p-4">
-                  <span
-                    className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      profile.role === "ADMIN"
-                        ? "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200"
-                        : "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200"
-                    }`}
-                  >
-                    {profile.role}
-                  </span>
-                </td>
-                <td className="p-4 text-sm text-slate-500 font-mono">
-                  {profile.id}
-                </td>
-                <td className="p-4">
-                  {/* ПРОМЯНАТА Е ТУК */}
-                  <Link
-                    href={`/admin/users/${profile.id}`}
-                    className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
-                    Промени
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <UsersTable initialProfiles={profiles} toastMessage={toastMessage} />
     </div>
-  );
+  )
 }

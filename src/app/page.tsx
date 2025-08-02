@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { useLanguage } from '@/context/LanguageContext' // НОВО
 import LanguageSwitcher from '@/components/LanguageSwitcher' // НОВО
+import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const { t } = useLanguage() // НОВО
@@ -22,22 +23,19 @@ export default function LoginPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-// Във файла src/app/page.tsx
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
     
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    })
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
     
     if (error) {
       setError('Грешен и-мейл или парола.')
-      setLoading(false) // ВАЖНО: Спираме зареждането при грешка
+      setLoading(false)
     } else {
+      // НОВО: Показваме известие
+      toast.success('Успешно вписване! Пренасочваме...')
       router.push('/dashboard')
     }
   }
