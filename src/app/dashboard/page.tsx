@@ -17,6 +17,18 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/')
 
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles') // Четем от новата profiles таблица
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profileError) {
+    console.error('Грешка при извличане на профила на потребителя:', profileError)
+  }
+
+  const userRole = profileData?.role || 'USER'
+
   const { data: regionsData, error } = await supabase
     .from('regions')
     .select(`
@@ -45,5 +57,5 @@ export default async function DashboardPage() {
   const username = user.user_metadata?.username || user.email
 
   // Просто извикваме клиентския компонент и му подаваме данните
-  return <DashboardClient regions={regions} username={username} />
+  return <DashboardClient regions={regions} username={username} userRole={userRole} />
 }

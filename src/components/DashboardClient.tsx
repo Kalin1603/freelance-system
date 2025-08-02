@@ -7,6 +7,8 @@ import LogoutButton from '@/components/LogoutButton'
 import BackButton from '@/components/BackButton'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import { Lightbulb, Clapperboard, Coffee } from 'lucide-react'
+import { Settings } from 'lucide-react' 
+import Link from 'next/link'
 
 // НОВО: Актуализирани типове, които отразяват структурата на базата данни
 type Control = { id: number; name_bg: string; name_en: string }
@@ -16,9 +18,10 @@ type Region = { id: number; name_bg: string; name_en: string; sections: Section[
 type DashboardClientProps = {
   regions: Region[]
   username: string
+  userRole: string
 }
 
-export default function DashboardClient({ regions, username }: DashboardClientProps) {
+export default function DashboardClient({ regions, username, userRole }: DashboardClientProps) {
   const { language, t } = useLanguage()
 
   const getSectionIcon = (sectionName: string) => {
@@ -42,7 +45,18 @@ export default function DashboardClient({ regions, username }: DashboardClientPr
     <div className="flex h-screen bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200">
       <aside className="w-64 flex-shrink-0 bg-white dark:bg-slate-800/50 border-r border-slate-200 dark:border-slate-700/50 p-6 flex flex-col">
         <h1 className="text-2xl font-bold text-indigo-600">FreelanceSystem</h1>
-        <nav className="mt-10 flex-grow">
+
+        {/* НОВО: Добавяме бутон за администрация, ако ролята е ADMIN */}
+        {userRole === 'ADMIN' && (
+          <div className="mt-8">
+            <Link href="/admin" className="flex items-center w-full p-3 rounded-lg text-left text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
+              <Settings className="w-5 h-5 mr-3" />
+              <span className="font-semibold">Админ Панел</span>
+            </Link>
+          </div>
+        )}
+
+        <nav className="mt-4 flex-grow">
           <h2 className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-4">{t.navigation}</h2>
           <ul className="space-y-4">
             {regions.map(region => (
