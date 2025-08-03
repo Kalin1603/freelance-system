@@ -1,3 +1,5 @@
+// src/middleware.ts
+
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
@@ -27,6 +29,28 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
+  // --- НОВА ЛОГИКА ЗА ЗАЩИТА НА АДМИН ПАНЕЛА ---
+  if (pathname.startsWith('/admin')) {
+    // Ако няма потребител, пренасочваме към началната страница
+    if (!user) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+
+    // Ако има потребител, проверяваме ролята му
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role') // Взимаме ролята
+      .eq('id', user.id)
+      .single();
+
+    // Ако профилът не съществува или ролята не е 'admin', пренасочваме
+    if (!profile || profile.role !== 'admin') {
+      return NextResponse.redirect(new URL('/dashboard', request.url)); // Връщаме го в дашборда
+    }
+  }
+  // --- КРАЙ НА НОВАТА ЛОГИКА ---
+
+
   // Ако има потребител, проверяваме дали е активен
   if (user) {
     const { data: profile } = await supabase
@@ -35,18 +59,15 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    // АКО ПОТРЕБИТЕЛЯТ НЕ Е АКТИВЕН
     if (profile && !profile.is_active) {
-      // Излизаме го от системата
       await supabase.auth.signOut()
-      // Пренасочваме го към вход с съобщение за грешка
       const redirectUrl = new URL('/?error=account_deactivated', request.url)
       return NextResponse.redirect(redirectUrl)
     }
   }
   
   // Логиката за пренасочване остава същата
-  if (!user && pathname.startsWith('/dashboard')) {
+  if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/admin'))) {
     const url = new URL('/', request.url)
     return NextResponse.redirect(url)
   }
@@ -58,6 +79,7 @@ export async function middleware(request: NextRequest) {
   return response
 }
 
+// Обновяваме config, за да включим и админ пътищата
 export const config = {
-  matcher: ['/', '/register', '/dashboard/:path*'],
+  matcher: ['/', '/register', '/dashboard/:path*', '/admin/:path*'],
 }

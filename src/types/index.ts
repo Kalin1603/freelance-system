@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Файл: src/types/index.ts
 export type Profile = {
   id: string
@@ -28,3 +29,17 @@ export interface Control {
     section_id: string;
     created_at: string;
 }
+
+// src/types/index.ts
+
+export type AppEvent = {
+  id: number;
+  created_at: string;
+  event_type: 'Регистрация' | 'Смяна на Парола' | 'Вписване' | 'Изход' | 'Натискане на Контрола' | 'Влизане в Административни функции' | 'Промяна' | 'Създаване' | 'Зареждане на Списък Събития';
+  details: string | null;
+  additional_info: Record<string, any> | null;
+  user_id: string;
+  profiles: { 
+    username: string;
+  } | null;
+};
