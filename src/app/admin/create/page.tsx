@@ -5,12 +5,12 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { Region, Section } from '@/types';
-import { useLanguage } from '@/context/LanguageContext'; 
+import { useLanguage } from '@/context/LanguageContext';
 import toast from 'react-hot-toast';
-import { Loader2 } from 'lucide-react'; 
+import { Loader2 } from 'lucide-react';
 
 export default function CreatePage() {
-  const { t, language } = useLanguage(); 
+  const { t, language } = useLanguage();
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -20,7 +20,9 @@ export default function CreatePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [createType, setCreateType] = useState<'region' | 'section' | 'control'>('region');
-  const [itemName, setItemName] = useState('');
+  
+  const [itemNameBG, setItemNameBG] = useState('');
+  const [itemNameEN, setItemNameEN] = useState('');
 
   const [regions, setRegions] = useState<Region[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
@@ -32,7 +34,9 @@ export default function CreatePage() {
     const fetchData = async () => {
       setIsLoading(true);
       const [regionsRes, sectionsRes] = await Promise.all([
+        // КОРЕКЦИЯ: Искаме ВСИЧКИ колони, за да отговарят на типа 'Region'
         supabase.from('regions').select('*').order('name_bg'),
+        // КОРЕКЦИЯ: Искаме ВСИЧКИ колони, за да отговарят на типа 'Section'
         supabase.from('sections').select('*').order('name_bg')
       ]);
       setRegions(regionsRes.data || []);
@@ -44,14 +48,15 @@ export default function CreatePage() {
 
   // Нулиране при смяна на типа
   useEffect(() => {
-    setItemName('');
+    setItemNameBG('');
+    setItemNameEN('');
     setSelectedRegion('');
     setSelectedSection('');
   }, [createType]);
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
-    if (!itemName) {
+    if (!itemNameBG || !itemNameEN) {
         toast.error(t.nameRequiredError);
         return;
     }
@@ -59,7 +64,7 @@ export default function CreatePage() {
 
     try {
         let error;
-        const dataToInsert = { name_bg: itemName }; 
+        const dataToInsert = { name_bg: itemNameBG, name_en: itemNameEN };
 
         if (createType === 'region') {
             const { error: reqError } = await supabase.from('regions').insert([dataToInsert]);
@@ -77,7 +82,14 @@ export default function CreatePage() {
         if (error) throw error;
 
         toast.success(t.createSuccess);
-        setItemName('');
+        setItemNameBG('');
+        setItemNameEN('');
+        // Презареждаме данните, за да се появят в падащите списъци
+        const { data: newRegions } = await supabase.from('regions').select('*').order('name_bg');
+        const { data: newSections } = await supabase.from('sections').select('*').order('name_bg');
+        setRegions(newRegions || []);
+        setSections(newSections || []);
+
     } catch (e: any) {
         toast.error(`${t.createError}: ${e.message}`);
     } finally {
@@ -146,19 +158,31 @@ export default function CreatePage() {
             </div>
           )}
 
-          <div>
-             <label htmlFor="itemName" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-               {t.createItemNameLabel} ({language.toUpperCase()})
-             </label>
-             <input 
-               id="itemName" 
-               type="text" 
-               value={itemName} 
-               onChange={(e) => setItemName(e.target.value)} 
-               placeholder={`${t.createItemNamePlaceholder} ${t[createType]}...`}
-               className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm dark:bg-slate-700 focus:border-indigo-500 focus:ring-indigo-500" 
-               required
-             />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="itemNameBG" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t.nameBG}</label>
+              <input 
+                id="itemNameBG" 
+                type="text" 
+                value={itemNameBG} 
+                onChange={(e) => setItemNameBG(e.target.value)} 
+                placeholder={`${t.createItemNamePlaceholder} ${t[createType]}...`}
+                className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm dark:bg-slate-700 focus:border-indigo-500 focus:ring-indigo-500" 
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="itemNameEN" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t.nameEN}</label>
+              <input 
+                id="itemNameEN" 
+                type="text" 
+                value={itemNameEN} 
+                onChange={(e) => setItemNameEN(e.target.value)} 
+                placeholder={`Enter name for ${t[createType]}...`}
+                className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm dark:bg-slate-700 focus:border-indigo-500 focus:ring-indigo-500" 
+                required
+              />
+            </div>
           </div>
           
           <div className="pt-4">

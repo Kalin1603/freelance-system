@@ -6,22 +6,22 @@ import ControlButton from "@/components/ControlButton";
 import LogoutButton from "@/components/LogoutButton";
 import BackButton from "@/components/BackButton";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { Lightbulb, Clapperboard, Coffee } from "lucide-react";
-import { Settings } from "lucide-react";
+import { Lightbulb, Clapperboard, Coffee, Settings } from "lucide-react";
 import Link from "next/link";
 
-// НОВО: Актуализирани типове, които отразяват структурата на базата данни
-type Control = { id: number; name_bg: string; name_en: string };
+// Актуализирани типове, които отразяват структурата на базата данни
+// name_en е опционален, за да може TypeScript да не се оплаква
+type Control = { id: number; name_bg: string; name_en?: string | null };
 type Section = {
   id: number;
   name_bg: string;
-  name_en: string;
+  name_en?: string | null;
   controls: Control[];
 };
 type Region = {
   id: number;
   name_bg: string;
-  name_en: string;
+  name_en?: string | null;
   sections: Section[];
 };
 
@@ -39,8 +39,8 @@ export default function DashboardClient({
   const { language, t } = useLanguage();
 
   const getSectionIcon = (sectionName: string) => {
-    // Вече подаваме преведеното име, така че проверката е по-проста
-    switch (sectionName.toLowerCase()) {
+    // ЗАЩИТА: Ако sectionName е null/undefined, използваме празен низ
+    switch ((sectionName || '').toLowerCase()) {
       case "осветление":
       case "lighting":
         return <Lightbulb className="w-5 h-5 mr-3 text-gray-500" />;
@@ -60,7 +60,6 @@ export default function DashboardClient({
       <aside className="w-64 flex-shrink-0 bg-white dark:bg-slate-800/50 border-r border-slate-200 dark:border-slate-700/50 p-6 flex flex-col">
         <h1 className="text-2xl font-bold text-indigo-600">FreelanceSystem</h1>
 
-        {/* Показваме бутона, ако ролята е ADMIN ИЛИ POWER_ADMIN */}
         {(userRole === "ADMIN" || userRole === "POWER_ADMIN") && (
           <div className="mt-8">
             <Link
@@ -80,22 +79,22 @@ export default function DashboardClient({
           <ul className="space-y-4">
             {regions.map((region) => (
               <li key={region.id}>
-                {/* ПРЕВОД: */}
                 <span className="font-bold text-slate-900 dark:text-slate-50">
-                  {language === "bg" ? region.name_bg : region.name_en}
+                  {/* ЗАЩИТА: || region.name_bg */}
+                  {language === "en" ? region.name_en || region.name_bg : region.name_bg}
                 </span>
                 <ul className="mt-2 space-y-2 pl-4">
                   {region.sections.map((section) => (
                     <li key={section.id}>
-                      {/* ПРЕВОД: */}
                       <a
                         href={`#section-${section.id}`}
                         className="flex items-center text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                       >
                         {getSectionIcon(
-                          language === "bg" ? section.name_bg : section.name_en
+                          // ЗАЩИТА: || section.name_bg
+                          language === "en" ? section.name_en || section.name_bg : section.name_bg
                         )}
-                        {language === "bg" ? section.name_bg : section.name_en}
+                        {language === "en" ? section.name_en || section.name_bg : section.name_bg}
                       </a>
                     </li>
                   ))}
@@ -130,9 +129,9 @@ export default function DashboardClient({
             {regions.map((region) => (
               <div key={region.id}>
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
-                  {/* ПРЕВОД: */}
                   {t.region}:{" "}
-                  {language === "bg" ? region.name_bg : region.name_en}
+                  {/* ЗАЩИТА: || region.name_bg */}
+                  {language === "en" ? region.name_en || region.name_bg : region.name_bg}
                 </h3>
                 {region.sections.map((section) => (
                   <section
@@ -140,22 +139,19 @@ export default function DashboardClient({
                     id={`section-${section.id}`}
                     className="ml-0 md:ml-4 mb-12"
                   >
-                    {/* ПРЕВОД: */}
                     <h4 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4">
                       {t.section}:{" "}
-                      {language === "bg" ? section.name_bg : section.name_en}
+                      {/* ЗАЩИТА: || section.name_bg */}
+                      {language === "en" ? section.name_en || section.name_bg : section.name_bg}
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                       {section.controls.map((control) => (
-                        // ПРЕВОД: Подаваме на ControlButton само името за текущия език
                         <ControlButton
                           key={control.id}
                           control={{
                             id: control.id,
-                            name:
-                              language === "bg"
-                                ? control.name_bg
-                                : control.name_en,
+                            // ЗАЩИТА: || control.name_bg
+                            name: language === "en" ? control.name_en || control.name_bg : control.name_bg,
                           }}
                         />
                       ))}
