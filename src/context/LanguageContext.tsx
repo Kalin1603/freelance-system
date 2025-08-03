@@ -12,6 +12,7 @@ const translations = {
     noControls: 'Нямате достъп до контроли. Свържете се с администратор.',
     region: 'Регион',
     section: 'Секция',
+    control: 'Контрола',
     logout: 'Изход',
     // НОВИ преводи
     navigation: 'Навигация',
@@ -35,6 +36,28 @@ const translations = {
     loadingRegister: 'Създаване...',
     hasAccount: 'Вече имаш акаунт?',
     loginLink: 'Вход',
+    createTitle: 'Създаване на нов елемент',
+    createSubtitle: 'Изберете тип на елемента и попълнете данните по-долу.',
+    createChooseType: 'Избери какво да създадеш:',
+    createSelectRegion: 'Избери регион',
+    createSelectSection: 'Избери секция',
+    createSelectPlaceholder: '-- Моля, изберете --',
+    createItemNameLabel: 'Име',
+    createItemNamePlaceholder: 'Въведете име на', // ще се комбинира с тип
+    createButton: 'Създай',
+    creatingButton: 'Създаване...',
+    createSuccess: 'Елементът е създаден успешно!',
+    createError: 'Грешка при създаването',
+    nameRequiredError: 'Името е задължително.',
+    selectionRequiredError: 'Трябва да направите избор.',
+    adminPanel: 'Админ Панел',
+    adminDashboard: 'Администраторско табло',
+    welcomeToAdmin: 'Добре дошли в административния панел. Моля, изберете опция от менюто вляво, за да продължите.',
+    users: 'Потребители',
+    controls: 'Контроли',
+    create: 'Създай',
+    eventsList: 'Списък Събития',
+    backToDashboard: 'Назад към Таблото'
   },
   en: {
     // Вече съществуващи
@@ -43,6 +66,7 @@ const translations = {
     noControls: 'You have no access to controls. Please contact an administrator.',
     region: 'Region',
     section: 'Section',
+    control: 'Control',
     logout: 'Logout',
     // НОВИ преводи
     navigation: 'Navigation',
@@ -66,6 +90,28 @@ const translations = {
     loadingRegister: 'Creating...',
     hasAccount: 'Already have an account?',
     loginLink: 'Login',
+    createTitle: 'Create New Item',
+    createSubtitle: 'Select an item type and fill in the details below.',
+    createChooseType: 'Choose what to create:',
+    createSelectRegion: 'Select Region',
+    createSelectSection: 'Select Section',
+    createSelectPlaceholder: '-- Please select --',
+    createItemNameLabel: 'Name',
+    createItemNamePlaceholder: 'Enter name for', // will be combined with type
+    createButton: 'Create',
+    creatingButton: 'Creating...',
+    createSuccess: 'Item created successfully!',
+    createError: 'Error during creation',
+    nameRequiredError: 'The name is required.',
+    selectionRequiredError: 'A selection is required.',
+    adminPanel: 'Admin Panel',
+    adminDashboard: 'Admin Dashboard',
+    welcomeToAdmin: 'Welcome to the admin panel. Please select an option from the menu on the left to continue.',
+    users: 'Users',
+    controls: 'Controls',
+    create: 'Create',
+    eventsList: 'Events List',
+    backToDashboard: 'Back to Dashboard'
   }
 }
 
