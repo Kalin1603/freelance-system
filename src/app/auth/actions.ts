@@ -81,3 +81,36 @@ export async function signInAction(formData: FormData): Promise<{ error: string 
   
   redirect('/dashboard');
 }
+
+// ====================================================================
+// НОВ Server Action за ИЗХОД, който добавяме в края на файла
+// ====================================================================
+export async function signOutAction() {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { 
+    cookies: {
+        get(name: string) { return cookieStore.get(name)?.value },
+        set(name: string, value: string, options: CookieOptions) { cookieStore.set({ name, value, ...options }) },
+        remove(name: string, options: CookieOptions) { cookieStore.set({ name, value: '', ...options }) }
+    } 
+  });
+
+  // Взимаме потребителя ПРЕДИ да го изкараме от системата
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    // --- ЗАПИС НА СЪБИТИЕ "Изход" ---
+    await logEvent({
+      supabase,
+      eventType: 'Изход',
+      userId: user.id,
+      details: `Потребител излезе: ${user.email}`
+    });
+  }
+
+  // Изкарваме потребителя от системата
+  await supabase.auth.signOut();
+  
+  // Пренасочваме към началната страница
+  redirect('/');
+}
