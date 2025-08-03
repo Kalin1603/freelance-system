@@ -1,29 +1,18 @@
-// Файл: src/components/DashboardClient.tsx
+// src/components/DashboardClient.tsx
 "use client";
 
 import { useLanguage } from "@/context/LanguageContext";
-import ControlButton from "@/components/ControlButton";
+import ControlButton from "@/components/ControlButton"; // Импортваме новия, универсален бутон
 import LogoutButton from "@/components/LogoutButton";
 import BackButton from "@/components/BackButton";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Lightbulb, Clapperboard, Coffee, Settings } from "lucide-react";
 import Link from "next/link";
 
-// Актуализирани типове, които отразяват структурата на базата данни
-// name_en е опционален, за да може TypeScript да не се оплаква
+// Типовете остават същите, те са коректни
 type Control = { id: number; name_bg: string; name_en?: string | null };
-type Section = {
-  id: number;
-  name_bg: string;
-  name_en?: string | null;
-  controls: Control[];
-};
-type Region = {
-  id: number;
-  name_bg: string;
-  name_en?: string | null;
-  sections: Section[];
-};
+type Section = { id: number; name_bg: string; name_en?: string | null; controls: Control[] };
+type Region = { id: number; name_bg: string; name_en?: string | null; sections: Section[] };
 
 type DashboardClientProps = {
   regions: Region[];
@@ -39,7 +28,6 @@ export default function DashboardClient({
   const { language, t } = useLanguage();
 
   const getSectionIcon = (sectionName: string) => {
-    // ЗАЩИТА: Ако sectionName е null/undefined, използваме празен низ
     switch ((sectionName || '').toLowerCase()) {
       case "осветление":
       case "lighting":
@@ -58,6 +46,7 @@ export default function DashboardClient({
   return (
     <div className="flex h-screen bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200">
       <aside className="w-64 flex-shrink-0 bg-white dark:bg-slate-800/50 border-r border-slate-200 dark:border-slate-700/50 p-6 flex flex-col">
+        {/* ... Останалата част на aside остава непроменена ... */}
         <h1 className="text-2xl font-bold text-indigo-600">FreelanceSystem</h1>
 
         {(userRole === "ADMIN" || userRole === "POWER_ADMIN") && (
@@ -80,7 +69,6 @@ export default function DashboardClient({
             {regions.map((region) => (
               <li key={region.id}>
                 <span className="font-bold text-slate-900 dark:text-slate-50">
-                  {/* ЗАЩИТА: || region.name_bg */}
                   {language === "en" ? region.name_en || region.name_bg : region.name_bg}
                 </span>
                 <ul className="mt-2 space-y-2 pl-4">
@@ -91,7 +79,6 @@ export default function DashboardClient({
                         className="flex items-center text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                       >
                         {getSectionIcon(
-                          // ЗАЩИТА: || section.name_bg
                           language === "en" ? section.name_en || section.name_bg : section.name_bg
                         )}
                         {language === "en" ? section.name_en || section.name_bg : section.name_bg}
@@ -130,7 +117,6 @@ export default function DashboardClient({
               <div key={region.id}>
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
                   {t.region}:{" "}
-                  {/* ЗАЩИТА: || region.name_bg */}
                   {language === "en" ? region.name_en || region.name_bg : region.name_bg}
                 </h3>
                 {region.sections.map((section) => (
@@ -141,18 +127,18 @@ export default function DashboardClient({
                   >
                     <h4 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4">
                       {t.section}:{" "}
-                      {/* ЗАЩИТА: || section.name_bg */}
                       {language === "en" ? section.name_en || section.name_bg : section.name_bg}
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                       {section.controls.map((control) => (
+                        // ===========================================
+                        // ЕДИНСТВЕНАТА ПРОМЯНА Е ТУК
+                        // ===========================================
                         <ControlButton
                           key={control.id}
-                          control={{
-                            id: control.id,
-                            // ЗАЩИТА: || control.name_bg
-                            name: language === "en" ? control.name_en || control.name_bg : control.name_bg,
-                          }}
+                          id={control.id}
+                          name_bg={control.name_bg}
+                          name_en={control.name_en || null} // Подаваме двете имена
                         />
                       ))}
                     </div>

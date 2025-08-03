@@ -1,111 +1,79 @@
-// Файл: src/app/page.tsx
+// src/app/page.tsx
 'use client'
 
-import { useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
-import { useLanguage } from '@/context/LanguageContext' // НОВО
-import LanguageSwitcher from '@/components/LanguageSwitcher' // НОВО
+import { useLanguage } from '@/context/LanguageContext'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 import toast from 'react-hot-toast'
-import { useSearchParams } from 'next/navigation' // НОВ import
-import { useEffect } from 'react' // НОВ import
+import { signInAction } from '@/app/auth/actions'
 
 export default function LoginPage() {
-  const { t } = useLanguage() // НОВО
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const { t } = useLanguage()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const searchParams = useSearchParams() // НОВ hook
+  const searchParams = useSearchParams()
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
-  // НОВАТА, КОРИГИРАНА ФУНКЦИЯ
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-
-    // Стъпка 1: Опитваме да се впишем
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    })
-
-    if (signInError) {
-      setError('Грешен и-мейл или парола.')
-      setLoading(false)
-      return
-    }
-
-    // Стъпка 2: АКО ВПИСВАНЕТО Е УСПЕШНО, ПРОВЕРЯВАМЕ ПРОФИЛА
-    if (signInData.user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_active')
-        .eq('id', signInData.user.id)
-        .single()
-      
-      // АКО ПРОФИЛЪТ Е ДЕАКТИВИРАН
-      if (profile && !profile.is_active) {
-        setError("Вашият акаунт е деактивиран.")
-        // ИЗЛИЗАМЕ ГО ВЕДНАГА, за да изчистим сесията
-        await supabase.auth.signOut() 
-        setLoading(false)
-        return
-      }
-    }
-
-    // Стъпка 3: Ако всичко е наред, показваме съобщение и пренасочваме
-    toast.success('Успешно вписване! Пренасочваме...')
-    router.push('/dashboard')
-  }
-
-  // НОВО: Проверяваме за съобщение за грешка при зареждане на страницата
   useEffect(() => {
     const errorParam = searchParams.get('error')
-    if (errorParam === 'account_deactivated') {
-      setError("Вашият акаунт е деактивиран.")
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam));
+    }
+    const messageParam = searchParams.get('message')
+    if (messageParam) {
+      toast.success(decodeURIComponent(messageParam))
     }
   }, [searchParams])
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const result = await signInAction(formData);
+
+    if (result && result.error) {
+      setError(result.error);
+      setLoading(false); // Спираме анимацията при грешка
+    }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 px-4">
       <div className="absolute top-4 right-4"><LanguageSwitcher /></div>
       <div className="w-full max-w-md p-8 md:p-10 space-y-6 bg-white dark:bg-gray-950/50 dark:border dark:border-slate-800 rounded-xl shadow-lg">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">{t.loginWelcome}</h1>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{t.loginPrompt}</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">{t.loginWelcome}</h1>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{t.loginPrompt}</p>
         </div>
-        <form onSubmit={handleLogin} className="space-y-6" noValidate>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t.emailLabel}</label>
-            <input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:border-slate-700 py-2.5 px-4 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-900 transition" disabled={loading} placeholder="you@example.com" />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t.passwordLabel}</label>
-            <input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 dark:border-slate-700 py-2.5 px-4 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-900 transition" disabled={loading} placeholder="••••••••" />
-          </div>
-          {error && <p className="text-sm text-center text-red-500 dark:text-red-400 font-semibold">{error}</p>}
-          <div className="flex items-center justify-end text-sm">
-            <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">{t.forgotPassword}</a>
-          </div>
-          <div>
+        
+        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t.emailLabel}</label>
+              <input id="email" name="email" type="email" autoComplete="email" required className="mt-1 w-full rounded-md border-gray-300 dark:border-slate-700 py-2.5 px-4 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-900 transition" disabled={loading} placeholder="you@example.com" />
+            </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t.passwordLabel}</label>
+              <input id="password" name="password" type="password" autoComplete="current-password" required className="mt-1 w-full rounded-md border-gray-300 dark:border-slate-700 py-2.5 px-4 text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-slate-900 transition" disabled={loading} placeholder="••••••••" />
+            </div>
+
+            {error && <p className="text-sm text-center text-red-500 dark:text-red-400 font-semibold">{error}</p>}
+            
+            <div className="flex items-center justify-end text-sm">
+              <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">{t.forgotPassword}</a>
+            </div>
+            
             <button type="submit" disabled={loading} className="w-full flex justify-center items-center px-4 py-3 font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-500 dark:disabled:bg-indigo-900 disabled:cursor-not-allowed transition-all">
               {loading && <Loader2 className="w-5 h-5 mr-3 animate-spin" />}
               <span>{loading ? t.loadingLogin : t.loginButton}</span>
             </button>
-          </div>
         </form>
         <p className="text-sm text-center text-gray-500 dark:text-gray-400">
-          {t.noAccount}{' '}
-          <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">{t.registerLink}</Link>
+            {t.noAccount}{' '}
+            <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">{t.registerLink}</Link>
         </p>
       </div>
     </div>

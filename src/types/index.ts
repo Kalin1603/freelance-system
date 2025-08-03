@@ -35,11 +35,15 @@ export interface Control {
 export type AppEvent = {
   id: number;
   created_at: string;
-  event_type: 'Регистрация' | 'Смяна на Парола' | 'Вписване' | 'Изход' | 'Натискане на Контрола' | 'Влизане в Административни функции' | 'Промяна' | 'Създаване' | 'Зареждане на Списък Събития';
-  details: string | null;
+  // РАЗШИРЯВАМЕ ТИПА, за да включва и суровите данни от базата
+  event_type: 'Регистрация' | 'Смяна на Парола' | 'Вписване' | 'Изход' | 'Натискане на Контрола' | 'Влизане в Административни функции' | 'Промяна' | 'Създаване' | 'Зареждане на Списък Събития' | 'CONTROL_CLICKED' | string; // добавяме и | string за гъвкавост
+  
+  // РАЗШИРЯВАМЕ ТИПА, за да може 'details' да бъде и обект
+  details: Record<string, any> | string | null;
+
   additional_info: Record<string, any> | null;
   user_id: string;
-  profiles: { 
+  profiles: {
     username: string;
   } | null;
 };
