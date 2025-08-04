@@ -4,16 +4,15 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { Profile } from '@/types'
 import EditUserPageClient from './EditUserPageClient'
-import { JSX } from 'react'
 
-export default async function EditUserPage(
-  props: {
-    params: { id: string }
-    // App Router по подразбиране подава и това поле
-    searchParams?: Record<string, string | string[] | undefined>
-  }
-): Promise<JSX.Element> {
-  const { id } = props.params
+export default async function Page({
+  params,
+  searchParams,  // дори ако не го ползваш, Next.js очаква да го декларираш като optional
+}: {
+  params: { id: string }
+  searchParams?: Record<string, string | string[] | undefined>
+}) {
+  const { id } = params
 
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -38,7 +37,9 @@ export default async function EditUserPage(
     .eq('id', id)
     .single<Profile>()
 
-  if (!profile) notFound()
+  if (!profile) {
+    notFound()
+  }
 
   return <EditUserPageClient profile={profile} />
 }
