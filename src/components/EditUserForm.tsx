@@ -71,7 +71,7 @@ export default function EditUserForm({ profile }: EditUserFormProps) {
         <div className="md:col-span-2">
           <div className={`p-4 rounded-lg flex items-center justify-between ${isActive ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
             <p className={`font-medium ${isActive ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
-              {/* ✅ ПРЕВЕДЕНО */}
+              {/* ПРЕВЕДЕНО */}
               {isActive ? t.accountIsActive : t.accountIsDeactivated}
             </p>
             <button
