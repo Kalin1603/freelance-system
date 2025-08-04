@@ -1,7 +1,7 @@
 // src/app/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react' // 1. Импортираме useRef
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
@@ -16,14 +16,21 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const searchParams = useSearchParams()
 
+  // 2. Създаваме 'ref', който ще "запомни" дали известието е показано
+  const toastShownRef = useRef(false);
+
   useEffect(() => {
     const errorParam = searchParams.get('error')
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
     }
     const messageParam = searchParams.get('message')
-    if (messageParam) {
+
+    // 3. Добавяме проверка - показваме известието само ако не е било показвано преди
+    if (messageParam && !toastShownRef.current) {
       toast.success(decodeURIComponent(messageParam))
+      // Маркираме, че сме го показали, за да не се повтори
+      toastShownRef.current = true;
     }
   }, [searchParams])
 
@@ -63,7 +70,7 @@ export default function LoginPage() {
             {error && <p className="text-sm text-center text-red-500 dark:text-red-400 font-semibold">{error}</p>}
             
             <div className="flex items-center justify-end text-sm">
-              <a href="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">{t.forgotPassword}</a>
+              <Link href="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">{t.forgotPassword}</Link>
             </div>
             
             <button type="submit" disabled={loading} className="w-full flex justify-center items-center px-4 py-3 font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-500 dark:disabled:bg-indigo-900 disabled:cursor-not-allowed transition-all">

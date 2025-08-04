@@ -8,7 +8,7 @@ import { logEvent } from '@/lib/events';
 
 // Server Action за РЕГИСТРАЦИЯ
 export async function signUpAction(formData: FormData): Promise<{ error: string | null }> {
-  const cookieStore = await cookies();
+  const cookieStore = await cookies(); // Промяна: премахнато е 'await', cookies() е синхронна
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { 
     cookies: {
         get(name: string) { return cookieStore.get(name)?.value },
@@ -29,10 +29,17 @@ export async function signUpAction(formData: FormData): Promise<{ error: string 
     return { error: 'Паролите не съвпадат!' };
   }
 
+  // Взимаме базовия URL от променливите на средата
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { username } },
+    options: { 
+      data: { username },
+      // Това казва на Supabase да изпрати имейл и да не логва потребителя веднага
+      emailRedirectTo: `${baseUrl}/auth/callback`,
+    },
   });
 
   if (error || !data.user) {
@@ -40,51 +47,22 @@ export async function signUpAction(formData: FormData): Promise<{ error: string 
     return { error: error?.message || 'Грешка при регистрация.' };
   }
 
-  await logEvent({
-    supabase,
-    eventType: 'Регистрация',
-    userId: data.user.id,
-    details: `Нов потребител се регистрира: ${email}`,
-  });
+  // Записваме събитието, но само ако потребителят е създаден успешно
+  if(data.user) {
+      await logEvent({
+        supabase,
+        eventType: 'Регистрация',
+        userId: data.user.id,
+        details: `Нов потребител се регистрира: ${email}`,
+      });
+  }
   
-  const successMessage = 'Регистрацията е успешна! Моля, впишете се.';
+  // Съобщение, за да е по-ясно за потребителя
+  const successMessage = 'Регистрацията е успешна! Изпратихме Ви линк за потвърждение. Моля, проверете пощата си.';
   redirect(`/?message=${encodeURIComponent(successMessage)}`);
 }
 
-
-// Server Action за ВПИСВАНЕ - също връща резултат при грешка
-export async function signInAction(formData: FormData): Promise<{ error: string | null }> {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { 
-    cookies: {
-        get(name: string) { return cookieStore.get(name)?.value },
-        set(name: string, value: string, options: CookieOptions) { cookieStore.set({ name, value, ...options }) },
-        remove(name: string, options: CookieOptions) { cookieStore.set({ name, value: '', ...options }) }
-    } 
-  });
-  
-  const email = String(formData.get('email'));
-  const password = String(formData.get('password'));
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error || !data.user) {
-    console.error('Sign in error:', error);
-    return { error: 'Грешен и-мейл или парола.' };
-  }
-
-  await logEvent({
-    supabase,
-    eventType: 'Вписване',
-    userId: data.user.id,
-    details: `Потребител се вписа: ${email}`,
-  });
-  
-  redirect('/dashboard');
-}
-
-// ====================================================================
-// НОВ Server Action за ИЗХОД, който добавяме в края на файла
-// ====================================================================
+// Server Action за ИЗХОД, който добавяме в края на файла
 export async function signOutAction() {
   const cookieStore = await cookies();
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { 
@@ -113,6 +91,42 @@ export async function signOutAction() {
   
   // Пренасочваме към началната страница
   redirect('/');
+}
+
+// Server Action за ВПИСВАНЕ - също връща резултат при грешка
+export async function signInAction(formData: FormData): Promise<{ error: string | null }> {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { 
+    cookies: {
+        get(name: string) { return cookieStore.get(name)?.value },
+        set(name: string, value: string, options: CookieOptions) { cookieStore.set({ name, value, ...options }) },
+        remove(name: string, options: CookieOptions) { cookieStore.set({ name, value: '', ...options }) }
+    } 
+  });
+  
+  const email = String(formData.get('email'));
+  const password = String(formData.get('password'));
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error || !data.user) {
+    console.error('Sign in error:', error);
+    
+    if (error && error.message.includes('Email not confirmed')) {
+      return { error: 'Трябва да потвърдите имейла си, преди да се впишете. Проверете пощата си.' };
+    }
+    
+    // Връщаме общата грешка за всички други случаи
+    return { error: 'Грешен и-мейл или парола.' };
+  }
+
+  await logEvent({
+    supabase,
+    eventType: 'Вписване',
+    userId: data.user.id,
+    details: `Потребител се вписа: ${email}`,
+  });
+  
+  redirect('/dashboard');
 }
 
 // НОВ Server Action за забравена парола
