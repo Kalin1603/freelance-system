@@ -164,3 +164,61 @@ export async function forgotPasswordAction(formData: FormData): Promise<{ error:
   // От съображения за сигурност, ВИНАГИ връщаме успешно съобщение
   return { error: null, message: 'Ако съществува акаунт с този имейл, ще получите инструкции за смяна на паролата.' };
 }
+
+// Server Action за обновяване на потребителски профил
+export async function updateUserProfileAction(formData: FormData): Promise<{ error: string | null; success: boolean }> {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { 
+    cookies: {
+        get(name: string) { return cookieStore.get(name)?.value },
+        set(name: string, value: string, options: CookieOptions) { cookieStore.set({ name, value, ...options }) },
+        remove(name: string, options: CookieOptions) { cookieStore.set({ name, value: '', ...options }) }
+    } 
+  });
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !user.email) {
+    return { error: 'Authentication required.', success: false };
+  }
+  
+  const username = String(formData.get('username'));
+  const oldPassword = String(formData.get('oldPassword'));
+  const newPassword = String(formData.get('newPassword'));
+
+  // 1. Ако потребителят иска да смени паролата си
+  if (newPassword) {
+    if (!oldPassword) {
+      return { error: 'Трябва да въведете старата си парола, за да зададете нова.', success: false };
+    }
+    if (newPassword.length < 6) {
+      return { error: 'Новата парола трябва да е поне 6 символа.', success: false };
+    }
+
+    // Проверяваме дали старата парола е вярна, преди да позволим промяна.
+    const { error: reauthError } = await supabase.auth.signInWithPassword({ email: user.email, password: oldPassword });
+    if (reauthError) {
+      return { error: 'Грешна стара парола.', success: false };
+    }
+
+    // Ако старата парола е вярна, обновяваме с новата
+    const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
+    if (passwordError) {
+      return { error: passwordError.message, success: false };
+    }
+  }
+
+  // 2. Обновяваме потребителското име (независимо от паролата)
+  if (username && user.user_metadata?.username !== username) {
+      if (!username.trim()) {
+        return { error: 'Потребителското име не може да бъде празно.', success: false };
+      }
+      const { error: profileError } = await supabase.from('profiles').update({ username: username.trim() }).eq('id', user.id);
+      if (profileError) { return { error: profileError.message, success: false }; }
+
+      const { error: userMetaError } = await supabase.auth.updateUser({ data: { username: username.trim() } });
+      if (userMetaError) { return { error: userMetaError.message, success: false }; }
+  }
+
+  await logEvent({ supabase, eventType: 'Промяна', userId: user.id, details: 'Потребителят обнови профила си.' });
+  return { error: null, success: true };
+}
