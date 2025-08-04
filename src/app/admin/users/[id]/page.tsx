@@ -1,21 +1,23 @@
-// src/app/admin/users/[id]/page.tsx
+// src/app/admin/users/[id]/page.tsx - ПРОМЕНЕНА ВЕРСИЯ
+
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { Profile } from '@/types';
-import EditUserPageClient from './EditUserPageClient'; 
+// Импортираме обновения PageProps, заедно с Profile
+import { Profile, PageProps } from '@/types'; 
+import EditUserPageClient from './EditUserPageClient';
 
-// 1. Премахваме 'type PageProps' изцяло.
-// 2. Дефинираме типа на проповете директно в сигнатурата на функцията.
-// Това позволява на Next.js и TypeScript да си свършат работата без конфликти.
+// 1. Сигнатурата остава същата, но сега TypeScript знае, че params е Promise
+export default async function EditUserPage({ params }: PageProps<{ id: string }>) {
+  
+  // 2. Await-ваме params, за да получим достъп до стойностите му
+  const { id } = await params; 
 
-export default async function EditUserPage({ params }: { params: { id: string } }) {
-  const { id } = params;
-  const cookieStore = await cookies(); 
+  const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { 
+    {
       cookies: {
         get(name: string) { return cookieStore.get(name)?.value },
         set(name: string, value: string, options: CookieOptions) { cookieStore.set({ name, value, ...options }) },

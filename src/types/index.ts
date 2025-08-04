@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Файл: src/types/index.ts
 export type Profile = {
@@ -46,4 +47,10 @@ export type AppEvent = {
   profiles: {
     username: string;
   } | null;
+};
+
+export type PageProps<T extends Record<string, string> = {}> = {
+  // params вече е Promise, който се резолва до обект с твоите параметри
+  params: Promise<T>; 
+  searchParams?: { [key: string]: string | string[] | undefined };
 };
