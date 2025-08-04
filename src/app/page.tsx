@@ -34,7 +34,7 @@ export default function LoginPage() {
     }
   }, [searchParams])
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -43,8 +43,21 @@ export default function LoginPage() {
     const result = await signInAction(formData);
 
     if (result && result.error) {
-      setError(result.error);
-      setLoading(false); // Спираме анимацията при грешка
+      // Ключът, който идва от сървъра
+      const errorKey = result.error as keyof typeof t;
+
+      // Опитваме се да намерим превода за този ключ в 't' обекта
+      const translatedMessage = t[errorKey];
+
+      // Проверяваме дали сме намерили превод
+      if (typeof translatedMessage === 'string') {
+        setError(translatedMessage);
+      } else {
+        // Ако не сме намерили (или е функция, или undefined), показваме генерична грешка
+        setError(t.loginErrorGeneric);
+      }
+      
+      setLoading(false);
     }
   };
 

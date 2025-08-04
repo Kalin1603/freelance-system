@@ -112,11 +112,26 @@ export async function signInAction(formData: FormData): Promise<{ error: string 
     console.error('Sign in error:', error);
     
     if (error && error.message.includes('Email not confirmed')) {
-      return { error: 'Трябва да потвърдите имейла си, преди да се впишете. Проверете пощата си.' };
+      return { error: 'loginErrorEmailNotConfirmed' };
     }
     
     // Връщаме общата грешка за всички други случаи
-    return { error: 'Грешен и-мейл или парола.' };
+    return { error: 'loginErrorInvalidCredentials' };
+  }
+
+  // КЛЮЧОВАТА ПРОВЕРКА ЗА АКТИВЕН СТАТУС
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_active')
+    .eq('id', data.user.id)
+    .single();
+
+  if (!profile || !profile.is_active) {
+    // Деактивираният потребител е влязъл в Supabase, но не е активен в таблицата profiles
+    // Унищожаваме току-що създадената сесия
+    await supabase.auth.signOut();
+    // Връщаме грешка, която да се покаже във формата за вход
+    return { error: 'loginErrorAccountDeactivated' };
   }
 
   await logEvent({
