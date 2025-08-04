@@ -1,18 +1,15 @@
-// src/app/admin/users/[id]/page.tsx - ПРОМЕНЕНА ВЕРСИЯ
-
+// src/app/admin/users/[id]/page.tsx
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-// Импортираме обновения PageProps, заедно с Profile
 import { Profile, PageProps } from '@/types'; 
 import EditUserPageClient from './EditUserPageClient';
 
-// 1. Сигнатурата остава същата, но сега TypeScript знае, че params е Promise
-export default async function EditUserPage({ params }: PageProps<{ id: string }>) {
+export default async function EditUserPage({ params, searchParams }: PageProps<{ id: string }>) {
+  const { id } = await params;
+  // If you need to use searchParams, you would await it as well:
+  // const searchParamsObj = await searchParams || {};
   
-  // 2. Await-ваме params, за да получим достъп до стойностите му
-  const { id } = await params; 
-
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,16 +22,16 @@ export default async function EditUserPage({ params }: PageProps<{ id: string }>
       }
     }
   );
-
+  
   const { data: profile } = await supabase
     .from('profiles')
     .select('id, created_at, username, role, is_active')
     .eq('id', id)
     .single<Profile>();
-
+    
   if (!profile) {
     notFound();
   }
-
+  
   return <EditUserPageClient profile={profile} />;
 }

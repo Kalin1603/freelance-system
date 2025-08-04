@@ -50,7 +50,6 @@ export type AppEvent = {
 };
 
 export type PageProps<T extends Record<string, string> = {}> = {
-  // params вече е Promise, който се резолва до обект с твоите параметри
   params: Promise<T>; 
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };
