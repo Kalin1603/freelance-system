@@ -60,5 +60,12 @@ export default async function DashboardPage() {
   const username = user.user_metadata?.username || user.email
 
   // Подаваме данните на твоя клиентски компонент, който остава НЕПРОМЕНЕН
-  return <DashboardClient regions={regions} username={username} userRole={userRole} />
+  return (
+    <DashboardClient 
+      regions={regions} 
+      username={username!} 
+      email={user.email!}  
+      userRole={userRole} 
+    />
+  )
 }

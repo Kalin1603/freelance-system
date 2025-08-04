@@ -88,7 +88,7 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   return (
     <>
-      <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
+      <div className={`min-h-screen bg-slate-100 dark:bg-slate-900 transition-all duration-300 ${isProfileModalOpen ? 'blur-sm' : 'blur-0'}`}>
         
         {/* Фиксиран Language Switcher */}
         <div className="fixed top-4 right-4 z-50">
