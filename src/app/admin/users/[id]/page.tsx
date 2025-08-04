@@ -6,16 +6,12 @@ import { notFound } from 'next/navigation';
 import { Profile } from '@/types'; 
 import EditUserPageClient from './EditUserPageClient';
 
-// Промяна 2: Дефинираме типа за пропсовете ИЗРИЧНО и ЛОКАЛНО
-type EditUserPageProps = {
-  params: { id: string };
-  // Можем да добавим и searchParams, ако ни потрябва
-  // searchParams?: { [key: string]: string | string[] | undefined };
-};
-
-// Промяна 3: Използваме новия, локален тип
-export default async function EditUserPage({ params }: EditUserPageProps) {
-  // Логиката тук си остава СЪЩАТА и вече е правилна
+// Използваме новия, локален тип
+export default async function EditUserPage({
+  params,
+}: {
+  params: { id: string }
+}) {
   const { id } = params;
   
   const cookieStore = await cookies();
