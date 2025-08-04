@@ -95,6 +95,16 @@ const translations = {
     saveChanges: 'Запази всички промени',
     userUpdatedSuccess: 'Профилът е обновен успешно!',
     userUpdatedError: 'Грешка при обновяване.',
+    // НОВА СЕКЦИЯ: Преводи за "Забравена парола"
+    forgotPasswordPrompt: 'Въведете имейла си, за да получите линк за нулиране.',
+    sendResetLink: 'Изпрати линк',
+    backToLogin: 'Назад към Вход',
+    resetPasswordTitle: 'Смяна на парола',
+    resetPasswordPrompt: 'Въведете вашата нова парола.',
+    newPasswordLabel: 'Нова парола',
+    confirmNewPasswordLabel: 'Потвърди новата парола',
+    changePasswordButton: 'Смени паролата',
+    passwordChangedSuccess: 'Паролата е сменена успешно! Пренасочваме към вход...',
   },
   en: {
     // Вече съществуващи
@@ -186,6 +196,16 @@ const translations = {
     saveChanges: 'Save All Changes',
     userUpdatedSuccess: 'Profile updated successfully!',
     userUpdatedError: 'Error during update.',
+    // НОВА СЕКЦИЯ: Преводи за "Забравена парола"
+    forgotPasswordPrompt: 'Enter your email to receive a reset link.',
+    sendResetLink: 'Send Reset Link',
+    backToLogin: 'Back to Login',
+    resetPasswordTitle: 'Reset Password',
+    resetPasswordPrompt: 'Enter your new password.',
+    newPasswordLabel: 'New Password',
+    confirmNewPasswordLabel: 'Confirm New Password',
+    changePasswordButton: 'Change Password',
+    passwordChangedSuccess: 'Password changed successfully! Redirecting to login...',
   }
 }
 

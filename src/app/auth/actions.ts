@@ -114,3 +114,39 @@ export async function signOutAction() {
   // Пренасочваме към началната страница
   redirect('/');
 }
+
+// НОВ Server Action за забравена парола
+export async function forgotPasswordAction(formData: FormData): Promise<{ error: string | null; message: string | null; }> {
+  const email = String(formData.get('email'));
+  
+  // ВАЖНО: Вече използваме createServerClient, както е редно в server action
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { 
+      cookies: {
+          get(name: string) { return cookieStore.get(name)?.value },
+          set(name: string, value: string, options: CookieOptions) { cookieStore.set({ name, value, ...options }) },
+          remove(name: string, options: CookieOptions) { cookieStore.set({ name, value: '', ...options }) }
+      } 
+    }
+  );
+
+  // Взимаме базовия URL от променливите на средата
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    // Този URL трябва да сочи към страницата, където потребителят ще въведе новата си парола
+    redirectTo: `${baseUrl}/reset-password`,
+  });
+
+  if (error) {
+    console.error('Forgot password error:', error);
+    // Връщаме по-общо съобщение за грешка, за да не разкриваме детайли
+    return { error: 'Възникна грешка при изпращането на имейла.', message: null };
+  }
+
+  // От съображения за сигурност, ВИНАГИ връщаме успешно съобщение
+  return { error: null, message: 'Ако съществува акаунт с този имейл, ще получите инструкции за смяна на паролата.' };
+}

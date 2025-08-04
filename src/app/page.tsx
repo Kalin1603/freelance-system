@@ -63,7 +63,7 @@ export default function LoginPage() {
             {error && <p className="text-sm text-center text-red-500 dark:text-red-400 font-semibold">{error}</p>}
             
             <div className="flex items-center justify-end text-sm">
-              <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">{t.forgotPassword}</a>
+              <a href="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors">{t.forgotPassword}</a>
             </div>
             
             <button type="submit" disabled={loading} className="w-full flex justify-center items-center px-4 py-3 font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-500 dark:disabled:bg-indigo-900 disabled:cursor-not-allowed transition-all">
