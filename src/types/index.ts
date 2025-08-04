@@ -50,6 +50,6 @@ export type AppEvent = {
 };
 
 export type PageProps<T extends Record<string, string> = {}> = {
-  params: Promise<T>; 
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+  params: T; 
+  searchParams?: { [key: string]: string | string[] | undefined };
 };

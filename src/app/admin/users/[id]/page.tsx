@@ -5,10 +5,8 @@ import { notFound } from 'next/navigation';
 import { Profile, PageProps } from '@/types'; 
 import EditUserPageClient from './EditUserPageClient';
 
-export default async function EditUserPage({ params, searchParams }: PageProps<{ id: string }>) {
-  const { id } = await params;
-  // If you need to use searchParams, you would await it as well:
-  // const searchParamsObj = await searchParams || {};
+export default async function EditUserPage({ params }: PageProps<{ id: string }>) {
+  const { id } = params;
   
   const cookieStore = await cookies();
   const supabase = createServerClient(
