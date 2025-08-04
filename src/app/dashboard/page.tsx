@@ -11,61 +11,54 @@ type Section = { id: number; name_bg: string; name_en: string | null; controls: 
 type Region = { id: number; name_bg: string; name_en: string | null; sections: Section[] }
 
 export default async function DashboardPage() {
-  const cookieStore = await cookies() // Промених името за по-добра четимост
+  const cookieStore = await cookies()
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: { get: (name: string) => cookieStore.get(name)?.value } })
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/')
 
-  const { data: profileData, error: profileError } = await supabase
-    .from('profiles') // Използваме profiles, за да извлечем ролята на потребителя
-    .select('role')
-    .eq('id', user.id)
-    .single()
+  const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+  const userRole = profileData?.role || 'USER';
+  const username = user.user_metadata?.username || user.email;
 
-  if (profileError) {
-    console.error('Грешка при извличане на профила на потребителя:', profileError)
-  }
+  // 1. Проверяваме дали изобщо има дефинирани права в user_controls
+  const { count: permissionsCount } = await supabase
+    .from('user_controls')
+    .select('*', { count: 'exact', head: true });
 
-  const userRole = profileData?.role || 'USER'
-
-  // Извличаме ВСИЧКИ контроли
-  const { data: regionsData, error } = await supabase
-    .from('regions') // Използваме regions, за да извлечем всички региони
-    .select(`
-      id,
-      name_bg,
-      name_en,
+  let regionsQuery = supabase.from('regions').select(`
+      id, name_bg, name_en,
       sections (
-        id,
-        name_bg,
-        name_en,
-        controls (
-          id,
-          name_bg,
-          name_en
+        id, name_bg, name_en,
+        controls ( id, name_bg, name_en )
+      )
+    `);
+
+  // 2. АКО има дефинирани права, прилагаме стриктния филтър
+  if (permissionsCount && permissionsCount > 0) {
+    regionsQuery = supabase.from('regions').select(`
+      id, name_bg, name_en,
+      sections (
+        id, name_bg, name_en,
+        controls!inner (
+          id, name_bg, name_en,
+          user_controls!inner(user_id)
         )
       )
-    `)
-    // Тези два реда са добра практика, за да не получаваш празни региони/секции
-    .not('sections', 'is', null) 
+    `).eq('sections.controls.user_controls.user_id', user.id);
+  }
+
+  // 3. Изпълняваме финалната заявка
+  const { data: regionsData, error } = await regionsQuery
+    .not('sections', 'is', null)
     .not('sections.controls', 'is', null);
 
 
   if (error) {
-    console.error('Грешка при извличане на данните:', error)
+    console.error('Грешка при извличане на данните за дашборда:', error);
   }
 
-  const regions: Region[] = regionsData || []
-  const username = user.user_metadata?.username || user.email
+  const regions: Region[] = regionsData || [];
 
-  // Подаваме данните на твоя клиентски компонент, който остава НЕПРОМЕНЕН
-  return (
-    <DashboardClient 
-      regions={regions} 
-      username={username!} 
-      email={user.email!}  
-      userRole={userRole} 
-    />
-  )
+  return <DashboardClient regions={regions} username={username!} email={user.email!} userRole={userRole} />
 }
