@@ -1,11 +1,21 @@
-// src/app/admin/users/[id]/page.tsx
+// Файл: src/app/admin/users/[id]/page.tsx
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { Profile, PageProps } from '@/types'; 
+// Промяна 1: Вече НЕ импортираме PageProps
+import { Profile } from '@/types'; 
 import EditUserPageClient from './EditUserPageClient';
 
-export default async function EditUserPage({ params }: PageProps<{ id: string }>) {
+// Промяна 2: Дефинираме типа за пропсовете ИЗРИЧНО и ЛОКАЛНО
+type EditUserPageProps = {
+  params: { id: string };
+  // Можем да добавим и searchParams, ако ни потрябва
+  // searchParams?: { [key: string]: string | string[] | undefined };
+};
+
+// Промяна 3: Използваме новия, локален тип
+export default async function EditUserPage({ params }: EditUserPageProps) {
+  // Логиката тук си остава СЪЩАТА и вече е правилна
   const { id } = params;
   
   const cookieStore = await cookies();
