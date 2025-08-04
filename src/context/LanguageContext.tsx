@@ -105,6 +105,31 @@ const translations = {
     confirmNewPasswordLabel: 'Потвърди новата парола',
     changePasswordButton: 'Смени паролата',
     passwordChangedSuccess: 'Паролата е сменена успешно! Пренасочваме към вход...',
+    // НОВА СЕКЦИЯ: Преводи за Админ Табло
+    totalUsers: 'Общо потребители',
+    totalControls: 'Общо контроли',
+    recentActivity: 'Последна активност',
+    viewAllEvents: 'Виж всички събития',
+    newUsers: 'Нови потребители',
+    manageUsers: 'Управление на потребители',
+    quickActions: 'Бързи действия',
+    timeAgo: (
+      { value, unit }: { value: number, unit: string }
+    ) => {
+      const units: { [key: string]: string[] } = {
+        year: ['година', 'години'],
+        month: ['месец', 'месеца'],
+        day: ['ден', 'дни'],
+        hour: ['час', 'часа'],
+        minute: ['минута', 'минути'],
+        second: ['секунда', 'секунди'],
+      };
+      const form = value === 1 ? units[unit][0] : units[unit][1];
+      return `преди ${value} ${form}`;
+    },
+    // Нов превод за админ таблото
+    adminDashboardTitle: 'Преглед на системата', 
+    adminDashboardSubtitle: 'Бърз поглед върху активността и данните в системата.',
   },
   en: {
     // Вече съществуващи
@@ -206,11 +231,26 @@ const translations = {
     confirmNewPasswordLabel: 'Confirm New Password',
     changePasswordButton: 'Change Password',
     passwordChangedSuccess: 'Password changed successfully! Redirecting to login...',
+    // НОВА СЕКЦИЯ: Преводи за Админ Табло
+    totalUsers: 'Total Users',
+    totalControls: 'Total Controls',
+    recentActivity: 'Recent Activity',
+    viewAllEvents: 'View All Events',
+    newUsers: 'New Users',
+    manageUsers: 'Manage Users',
+    quickActions: 'Quick Actions',
+    timeAgo: (
+        { value, unit }: { value: number, unit: string }
+    ) => `${value} ${unit}${value === 1 ? '' : 's'} ago`,
+    // Нов превод за админ таблото
+    adminDashboardTitle: 'System Overview',
+    adminDashboardSubtitle: 'A quick glance at the activity and data in the system.'
   }
 }
 
+type Translations = typeof translations.bg & { timeAgo: (args: { value: number, unit: string }) => string };
+
 type Language = 'bg' | 'en'
-type Translations = typeof translations.bg
 
 // Дефинираме какво ще съдържа нашият контекст
 type LanguageContextType = {
@@ -225,7 +265,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 // Създаваме "Provider" - компонент, който ще обвие нашето приложение
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>('bg')
-  const t = translations[language]
+  const t = translations[language] as Translations
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
