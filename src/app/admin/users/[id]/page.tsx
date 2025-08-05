@@ -5,38 +5,41 @@ import { notFound } from 'next/navigation';
 import { Profile } from '@/types';
 import EditUserPageClient from './EditUserPageClient';
 
-// Дефинираме изрично типа за проповете на страницата
 type Props = {
   params: { id: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
 };
 
-// Използваме дефинирания тип Props
 export default async function EditUserPage({ params }: Props) {
   const { id } = params;
-  
+
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) { return cookieStore.get(name)?.value },
-        set(name: string, value: string, options: CookieOptions) { cookieStore.set({ name, value, ...options }) },
-        remove(name: string, options: CookieOptions) { cookieStore.set({ name, value: '', ...options }) }
-      }
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          cookieStore.set({ name, value, ...options });
+        },
+        remove(name: string, options: CookieOptions) {
+          cookieStore.set({ name, value: '', ...options });
+        },
+      },
     }
   );
-  
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('id, created_at, username, role, is_active')
     .eq('id', id)
     .single<Profile>();
-    
+
   if (!profile) {
     notFound();
   }
-  
+
   return <EditUserPageClient profile={profile} />;
 }
