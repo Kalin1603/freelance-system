@@ -2,16 +2,17 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-// Промяна 1: Вече НЕ импортираме PageProps
-import { Profile } from '@/types'; 
+import { Profile } from '@/types';
 import EditUserPageClient from './EditUserPageClient';
 
-// Използваме новия, локален тип
-export default async function EditUserPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+// Дефинираме изрично типа за проповете на страницата
+type Props = {
+  params: { id: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
+};
+
+// Използваме дефинирания тип Props
+export default async function EditUserPage({ params }: Props) {
   const { id } = params;
   
   const cookieStore = await cookies();
