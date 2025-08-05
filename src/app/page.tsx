@@ -1,7 +1,8 @@
-// src/app/page.tsx
+// Файл: src/app/page.tsx
 'use client'
 
-import { useState, useEffect, useRef } from 'react' // 1. Импортираме useRef
+import { Suspense } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
@@ -10,7 +11,8 @@ import LanguageSwitcher from '@/components/LanguageSwitcher'
 import toast from 'react-hot-toast'
 import { signInAction } from '@/app/auth/actions'
 
-export default function LoginPage() {
+
+function LoginForm() {
   const { t } = useLanguage()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -34,7 +36,7 @@ export default function LoginPage() {
     }
   }, [searchParams])
 
-   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -97,5 +99,24 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+
+// ===================================================================
+// ЧАСТ 2: СЪРВЪРЕН КОМПОНЕНТ (НОВИЯТ DEFAULT EXPORT)
+// Тази част няма 'use client' и действа като "обвивка".
+// ===================================================================
+
+// Компонент, който да се показва, докато клиентската част се зарежда
+function Loading() {
+  return <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900" />;
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <LoginForm />
+    </Suspense>
   )
 }
