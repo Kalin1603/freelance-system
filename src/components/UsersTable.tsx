@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Файл: src/components/UsersTable.tsx
 'use client'
 
@@ -19,7 +20,7 @@ export default function UsersTable({ initialProfiles, toastMessage }: UsersTable
   useEffect(() => {
     if (toastMessage) {
       toast.success(toastMessage)
-      deleteCookie('toastMessage', { path: '/' })
+      deleteCookie('toastMessage', { path: '/' } as any)
     }
   }, [toastMessage])
 

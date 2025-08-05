@@ -6,14 +6,14 @@ import { notFound } from 'next/navigation';
 import { Profile } from '@/types'; 
 import EditUserPageClient from './EditUserPageClient';
 
-type EditUserPageProps = {
-  params: {
-    id: string;
-  };
+// Дефинираме пълен тип, който Next.js очаква
+type PageProps = {
+  params: { id: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
 };
 
-// Използваме новия, локален тип
-export default async function EditUserPage({ params }: EditUserPageProps) {
+// Използваме този нов, по-пълен тип
+export default async function EditUserPage({ params }: PageProps) {
   const { id } = params;
   
   const cookieStore = await cookies();
