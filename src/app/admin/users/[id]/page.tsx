@@ -6,12 +6,14 @@ import { notFound } from 'next/navigation';
 import { Profile } from '@/types'; 
 import EditUserPageClient from './EditUserPageClient';
 
+type EditUserPageProps = {
+  params: {
+    id: string;
+  };
+};
+
 // Използваме новия, локален тип
-export default async function EditUserPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default async function EditUserPage({ params }: EditUserPageProps) {
   const { id } = params;
   
   const cookieStore = await cookies();
